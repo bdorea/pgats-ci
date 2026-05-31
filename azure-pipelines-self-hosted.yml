@@ -1,0 +1,128 @@
+# Pipeline Azure DevOps - Otimizada para Self-Hosted Agent
+# Usa cache local, builds incrementais e Node.js do agent
+
+trigger: none
+
+pr: none
+
+# Pool de self-hosted agent (configurada localmente)
+pool:
+  name: 'Default'
+  demands:
+    - node
+    - Agent.OS -equals Windows  # Remova se rodar em Linux/Mac
+
+variables:
+  nodeVersion: '24.x'
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+
+stages:
+  - stage: Setup
+    displayName: 'Setup com Cache'
+    jobs:
+      - job: CacheSetup
+        displayName: 'Instalar dependências com cache'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Configurar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          # Cache de node_modules
+          - task: Cache@2
+            inputs:
+              key: 'yarn | "$(Agent.OS)" | yarn.lock'
+              path: $(Build.SourcesDirectory)/node_modules
+            displayName: 'Cache node_modules'
+
+          - script: yarn install --frozen-lockfile
+            displayName: 'Instalar dependências'
+
+  - stage: Tests
+    displayName: 'Testes'
+    dependsOn: Setup
+    jobs:
+      - job: UnitTests
+        displayName: 'Testes unitários (incremental)'
+        workspace:
+          clean: outputs  # Mantém node_modules
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Configurar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          # Usa node_modules já instalados
+          - script: yarn test
+            displayName: 'Executar testes unitários'
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/results.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+            displayName: 'Publicar resultados dos testes'
+
+  - stage: E2E
+    displayName: 'Testes E2E'
+    dependsOn: Setup
+    jobs:
+      - job: E2ETests
+        displayName: 'Testes E2E com Playwright'
+        workspace:
+          clean: outputs
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Configurar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn playwright install
+            displayName: 'Instalar Browsers Playwright'
+
+          - script: yarn run e2e
+            displayName: 'Executar testes E2E'
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/playwright-report'
+              ArtifactName: 'playwright-report'
+            displayName: 'Publicar relatório Playwright'
+
+  - stage: Mutation
+    displayName: 'Teste de Mutação (Stryker)'
+    dependsOn: Tests
+    jobs:
+      - job: MutationTests
+        displayName: 'Executar teste de mutação'
+        workspace:
+          clean: outputs
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Configurar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn test:mutation
+            displayName: 'Executar teste de mutação (Stryker)'
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/reports'
+              ArtifactName: 'mutation-report'
+            displayName: 'Publicar relatório de mutação'
