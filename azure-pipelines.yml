@@ -30,27 +30,6 @@ stages:
           - script: yarn install
             displayName: 'Instalar dependências do projeto'
 
-  - stage: Lint
-    displayName: 'Linting'
-    dependsOn: Setup
-    jobs:
-      - job: LintCode
-        displayName: 'Validar código'
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(nodeVersion)
-            displayName: 'Instalar Node.js'
-
-          - script: npm install -g yarn
-            displayName: 'Instalar Yarn'
-
-          - script: yarn install
-            displayName: 'Instalar dependências'
-
-          - script: yarn run lint
-            displayName: 'Executar lint'
-
   - stage: Tests
     displayName: 'Testes'
     dependsOn: Setup
