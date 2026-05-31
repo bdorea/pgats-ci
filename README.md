@@ -3,6 +3,9 @@
 
 # PGATS - CI
 
+## 🚀 OpenCommit integrado
+Agora com suporte a melhorias automáticas de mensagens de commit via IA!
+
 ## Pré-requisitos
 
 1. Instale o [git](https://git-scm.com)
