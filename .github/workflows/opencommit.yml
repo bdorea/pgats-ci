@@ -1,0 +1,46 @@
+name: 'OpenCommit - Melhorar mensagens de commit com IA'
+
+on:
+  push:
+    # Executa em qualquer push, exceto nas branches principais
+    branches-ignore: 
+      - main
+      - master
+      - develop
+      - dev
+
+jobs:
+  opencommit:
+    timeout-minutes: 10
+    name: Melhorar commits com IA
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Fazer checkout do código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Executar OpenCommit
+        uses: di-sukharev/opencommit@github-action-v1.0.4
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        env:
+          # Obter chave em: https://platform.openai.com/account/api-keys
+          # Adicionar como secret em: Settings > Secrets and variables > Actions
+          OCO_API_KEY: ${{ secrets.OCO_API_KEY }}
+
+          # Configurações
+          OCO_TOKENS_MAX_INPUT: 4096
+          OCO_TOKENS_MAX_OUTPUT: 500
+          OCO_DESCRIPTION: false
+          OCO_EMOJI: true
+          OCO_MODEL: gpt-4o-mini
+          OCO_LANGUAGE: pt
+          OCO_PROMPT_MODULE: conventional-commit
