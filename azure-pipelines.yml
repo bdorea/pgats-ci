@@ -1,0 +1,140 @@
+# Pipeline Azure DevOps - Execução Manual
+# Trigger: Disparado manualmente via interface do Azure DevOps
+
+trigger: none  # Desativa triggers automáticos (push, pull request)
+
+pr: none  # Desativa triggers em pull requests
+
+# Permite disparo manual
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '24.x'
+
+stages:
+  - stage: Setup
+    displayName: 'Setup e Validação'
+    jobs:
+      - job: Install
+        displayName: 'Instalar dependências'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Instalar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn install
+            displayName: 'Instalar dependências do projeto'
+
+  - stage: Lint
+    displayName: 'Linting'
+    dependsOn: Setup
+    jobs:
+      - job: LintCode
+        displayName: 'Validar código'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Instalar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn install
+            displayName: 'Instalar dependências'
+
+          - script: yarn run lint
+            displayName: 'Executar lint'
+
+  - stage: Tests
+    displayName: 'Testes'
+    dependsOn: Setup
+    jobs:
+      - job: UnitTests
+        displayName: 'Testes unitários'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Instalar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn install
+            displayName: 'Instalar dependências'
+
+          - script: yarn test
+            displayName: 'Executar testes unitários'
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: '**/results.xml'
+              searchFolder: '$(System.DefaultWorkingDirectory)'
+            displayName: 'Publicar resultados dos testes'
+
+  - stage: E2E
+    displayName: 'Testes E2E'
+    dependsOn: Setup
+    jobs:
+      - job: E2ETests
+        displayName: 'Executar testes E2E'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Instalar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn install
+            displayName: 'Instalar dependências'
+
+          - script: yarn playwright install
+            displayName: 'Instalar Browsers do Playwright'
+
+          - script: yarn run e2e
+            displayName: 'Executar testes E2E'
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/playwright-report'
+              ArtifactName: 'playwright-report'
+            displayName: 'Publicar relatório do Playwright'
+
+  - stage: Mutation
+    displayName: 'Teste de Mutação'
+    dependsOn: Tests
+    jobs:
+      - job: MutationTests
+        displayName: 'Executar teste de mutação (Stryker)'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+            displayName: 'Instalar Node.js'
+
+          - script: npm install -g yarn
+            displayName: 'Instalar Yarn'
+
+          - script: yarn install
+            displayName: 'Instalar dependências'
+
+          - script: yarn test:mutation
+            displayName: 'Executar teste de mutação'
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              PathtoPublish: '$(System.DefaultWorkingDirectory)/reports'
+              ArtifactName: 'mutation-report'
+            displayName: 'Publicar relatório de mutação'
