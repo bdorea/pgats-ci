@@ -1,4 +1,4 @@
-# ⚡ Quick Start: Self-Hosted Agent em 5 minutos
+ ⚡ Quick Start: Self-Hosted Agent em 5 minutos
 
 ## Pré-requisitos (já tem? ✅)
 - Windows 10/11 ou Server 2016+

@@ -1,0 +1,11 @@
+﻿{
+  "agentId": 21,
+  "agentName": "DESKTOP-Q74CJD1",
+  "poolId": 1,
+  "poolName": "Default",
+  "serverUrl": "https://pipelinesghubeus14.actions.githubusercontent.com/vwc7t4FBrVInBAR1LSewSAtIcrsINEWrzRqBfOl1OnvalQ4iPm/",
+  "gitHubUrl": "https://github.com/bdorea/pgats-ci",
+  "workFolder": "_work",
+  "useV2Flow": true,
+  "serverUrlV2": "https://broker.actions.githubusercontent.com/"
+}

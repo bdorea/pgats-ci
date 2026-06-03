@@ -1,0 +1,12 @@
+﻿{
+  "repositoryName": "bdorea/pgats-ci",
+  "pipelineDirectory": "pgats-ci",
+  "workspaceDirectory": "pgats-ci\\pgats-ci",
+  "repositories": {
+    "bdorea/pgats-ci": {
+      "repositoryPath": "pgats-ci\\pgats-ci",
+      "lastRunOn": "06/03/2026 13:52:41 -03:00"
+    }
+  },
+  "lastRunOn": "06/03/2026 13:52:41 -03:00"
+}
